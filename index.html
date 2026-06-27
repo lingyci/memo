@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<!-- saved from url=(0062)blob:https://www.kimi.com/b22bfaa5-955a-407f-b44f-b178a947e8de -->
-<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -208,7 +208,7 @@ body {
 /* 隐藏文件输入 */
 #fileInput, #imageInput, #cameraInput { display: none; }
 </style>
-<!--<base target="_blank">--><base href="." target="_blank">
+<base target="_blank">
 </head>
 <body>
 
@@ -216,7 +216,7 @@ body {
 <div id="loginPage">
     <h1>📋 工作备忘录</h1>
     <div class="login-box">
-        <input type="password" id="passwordInput" placeholder="请输入密码" onkeypress="if(event.key===&#39;Enter&#39;)doLogin()">
+        <input type="password" id="passwordInput" placeholder="请输入密码" onkeypress="if(event.key==='Enter')doLogin()">
         <button onclick="doLogin()">进入</button>
         <div id="loginError">密码错误</div>
     </div>
@@ -265,10 +265,10 @@ body {
 
     <!-- 底部输入栏（仅备忘录显示） -->
     <div class="input-bar" id="inputBar">
-        <input type="text" id="memoInput" placeholder="记点什么..." onkeypress="if(event.key===&#39;Enter&#39;)sendMemo()">
-        <button class="icon-btn" onclick="document.getElementById(&#39;imageInput&#39;).click()">🖼️</button>
-        <button class="icon-btn" onclick="document.getElementById(&#39;cameraInput&#39;).click()">📷</button>
-        <button class="icon-btn" onclick="document.getElementById(&#39;fileInput&#39;).click()">📎</button>
+        <input type="text" id="memoInput" placeholder="记点什么..." onkeypress="if(event.key==='Enter')sendMemo()">
+        <button class="icon-btn" onclick="document.getElementById('imageInput').click()">🖼️</button>
+        <button class="icon-btn" onclick="document.getElementById('cameraInput').click()">📷</button>
+        <button class="icon-btn" onclick="document.getElementById('fileInput').click()">📎</button>
         <button class="send-btn" onclick="sendMemo()">➤</button>
     </div>
 
@@ -279,13 +279,13 @@ body {
 
     <!-- 底部导航 -->
     <div class="bottom-nav" id="bottomNav">
-        <div class="nav-item active" onclick="switchTab(&#39;memo&#39;)">
+        <div class="nav-item active" onclick="switchTab('memo')">
             <span class="nav-icon">📝</span>备忘录
         </div>
-        <div class="nav-item" onclick="switchTab(&#39;todo&#39;)">
+        <div class="nav-item" onclick="switchTab('todo')">
             <span class="nav-icon">✅</span>待办
         </div>
-        <div class="nav-item" onclick="switchTab(&#39;profile&#39;)">
+        <div class="nav-item" onclick="switchTab('profile')">
             <span class="nav-icon">👤</span>我的
         </div>
     </div>
@@ -300,7 +300,7 @@ body {
 <div class="modal" id="todoModal">
     <div class="modal-content">
         <h4>新建待办</h4>
-        <input type="text" id="todoInput" placeholder="要做什么..." onkeypress="if(event.key===&#39;Enter&#39;)addTodo()">
+        <input type="text" id="todoInput" placeholder="要做什么..." onkeypress="if(event.key==='Enter')addTodo()">
         <div class="modal-btns">
             <button class="btn-secondary" onclick="closeTodoModal()">取消</button>
             <button class="btn-primary" onclick="addTodo()" style="background:#667eea;color:white;">确定</button>
@@ -733,6 +733,12 @@ async function exportBackup() {
     URL.revokeObjectURL(url);
 }
 
+function importMerge() {
+    const input = document.getElementById('mergeFile');
+    input.value = '';
+    input.click();
+}
+
 function importBackup() {
     const input = document.getElementById('importFile');
     input.value = '';
@@ -812,5 +818,5 @@ if (sessionStorage.getItem('memoLoggedIn') === 'true') {
     initApp();
 }
 </script>
-
-</body></html>
+</body>
+</html>
