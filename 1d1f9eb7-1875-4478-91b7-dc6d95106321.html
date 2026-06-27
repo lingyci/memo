@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<!-- saved from url=(0062)blob:https://www.kimi.com/1d1f9eb7-1875-4478-91b7-dc6d95106321 -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>工作备忘录</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f5f5f5;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* 登录页 */
+#loginPage {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 9999;
+}
+#loginPage h1 { color: white; font-size: 28px; margin-bottom: 40px; }
+#loginPage .login-box {
+    background: white; padding: 30px; border-radius: 16px;
+    width: 85%; max-width: 320px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+#loginPage input {
+    width: 100%; padding: 14px; font-size: 16px; border: 2px solid #e0e0e0;
+    border-radius: 10px; outline: none; margin-bottom: 15px;
+}
+#loginPage input:focus { border-color: #667eea; }
+#loginPage button {
+    width: 100%; padding: 14px; background: #667eea; color: white;
+    border: none; border-radius: 10px; font-size: 16px; cursor: pointer;
+}
+#loginPage button:active { background: #5a6fd6; }
+#loginError { color: #e74c3c; font-size: 14px; text-align: center; margin-top: 10px; display: none; }
+
+/* 主界面 */
+#mainApp { display: none; height: 100vh; flex-direction: column; }
+
+/* 顶部搜索 */
+.header {
+    background: #667eea; padding: 10px 15px; padding-top: env(safe-area-inset-top, 10px);
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.header input {
+    flex: 1; padding: 10px 15px; border: none; border-radius: 20px;
+    font-size: 14px; outline: none; background: rgba(255,255,255,0.9);
+}
+.header .menu-btn {
+    color: white; font-size: 20px; cursor: pointer; padding: 5px;
+}
+
+/* 内容区 */
+.content {
+    flex: 1; overflow-y: auto; padding: 10px; padding-bottom: 140px;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 时间轴消息 */
+.msg-group { margin-bottom: 15px; }
+.msg-date {
+    text-align: center; color: #999; font-size: 12px; margin-bottom: 8px;
+}
+.msg-bubble {
+    background: white; border-radius: 12px; padding: 12px; margin-bottom: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: relative;
+    animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.msg-time { color: #999; font-size: 11px; margin-bottom: 6px; }
+.msg-text { font-size: 15px; line-height: 1.6; color: #333; word-break: break-all; }
+.msg-images { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.msg-images img {
+    width: 100px; height: 100px; object-fit: cover; border-radius: 8px;
+    cursor: pointer;
+}
+.msg-files { margin-top: 8px; }
+.file-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #f0f0f0; padding: 6px 12px; border-radius: 6px;
+    font-size: 13px; color: #667eea; cursor: pointer;
+}
+.msg-delete {
+    position: absolute; top: 5px; right: 8px; color: #ccc;
+    font-size: 18px; cursor: pointer; display: none;
+}
+.msg-bubble:active .msg-delete { display: block; }
+
+/* 待办页面 */
+.todo-page { display: none; }
+.todo-item {
+    background: white; border-radius: 12px; padding: 14px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.todo-checkbox {
+    width: 22px; height: 22px; border: 2px solid #667eea;
+    border-radius: 50%; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; flex-shrink: 0;
+}
+.todo-checkbox.checked { background: #667eea; }
+.todo-checkbox.checked::after {
+    content: "✓"; color: white; font-size: 14px;
+}
+.todo-text { flex: 1; font-size: 15px; }
+.todo-text.done { text-decoration: line-through; color: #999; }
+.todo-delete { color: #e74c3c; font-size: 18px; cursor: pointer; }
+.todo-add-btn {
+    position: fixed; bottom: 80px; right: 20px; width: 56px; height: 56px;
+    background: #667eea; color: white; border-radius: 50%; border: none;
+    font-size: 28px; box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    z-index: 100;
+}
+
+/* 我的页面 */
+.profile-page { display: none; padding: 20px; }
+.profile-card {
+    background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.profile-card h3 { font-size: 16px; color: #333; margin-bottom: 15px; }
+.profile-btn {
+    width: 100%; padding: 14px; margin-bottom: 10px; border: none;
+    border-radius: 10px; font-size: 15px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; gap: 8px;
+}
+.btn-primary { background: #667eea; color: white; }
+.btn-secondary { background: #f0f0f0; color: #333; }
+.btn-danger { background: #ff6b6b; color: white; }
+.profile-btn:active { opacity: 0.8; }
+
+/* 底部输入栏 */
+.input-bar {
+    position: fixed; bottom: 60px; left: 0; right: 0;
+    background: white; border-top: 1px solid #e0e0e0;
+    padding: 8px 12px; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    display: flex; align-items: center; gap: 8px; z-index: 100;
+}
+.input-bar input {
+    flex: 1; padding: 10px 14px; border: 1px solid #e0e0e0;
+    border-radius: 20px; font-size: 15px; outline: none;
+}
+.input-bar .icon-btn {
+    width: 40px; height: 40px; border-radius: 50%; border: none;
+    background: #f0f0f0; display: flex; align-items: center; justify-content: center;
+    font-size: 20px; cursor: pointer;
+}
+.input-bar .send-btn {
+    width: 40px; height: 40px; border-radius: 50%; border: none;
+    background: #667eea; color: white; font-size: 18px; cursor: pointer;
+}
+
+/* 底部导航 */
+.bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: white; border-top: 1px solid #e0e0e0;
+    display: flex; justify-content: space-around; padding: 8px 0;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    z-index: 100;
+}
+.nav-item {
+    flex: 1; text-align: center; padding: 5px; cursor: pointer;
+    color: #999; font-size: 12px;
+}
+.nav-item.active { color: #667eea; }
+.nav-item .nav-icon { font-size: 22px; display: block; margin-bottom: 2px; }
+
+/* 图片预览 */
+.img-preview {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9); display: none; align-items: center;
+    justify-content: center; z-index: 10000; cursor: pointer;
+}
+.img-preview img { max-width: 95%; max-height: 95%; object-fit: contain; }
+
+/* 弹窗 */
+.modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); display: none; align-items: center;
+    justify-content: center; z-index: 10001;
+}
+.modal-content {
+    background: white; border-radius: 16px; padding: 24px;
+    width: 85%; max-width: 300px; text-align: center;
+}
+.modal-content h4 { margin-bottom: 15px; }
+.modal-content input {
+    width: 100%; padding: 12px; border: 1px solid #e0e0e0;
+    border-radius: 8px; font-size: 15px; margin-bottom: 15px;
+}
+.modal-btns { display: flex; gap: 10px; }
+.modal-btns button { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; }
+
+/* 空状态 */
+.empty-state {
+    text-align: center; padding: 60px 20px; color: #999;
+}
+.empty-state .empty-icon { font-size: 60px; margin-bottom: 15px; }
+
+/* 隐藏文件输入 */
+#fileInput, #imageInput, #cameraInput { display: none; }
+</style>
+<!--<base target="_blank">--><base href="." target="_blank">
+</head>
+<body>
+
+<!-- 登录页 -->
+<div id="loginPage">
+    <h1>📋 工作备忘录</h1>
+    <div class="login-box">
+        <input type="password" id="passwordInput" placeholder="请输入密码" onkeypress="if(event.key===&#39;Enter&#39;)doLogin()">
+        <button onclick="doLogin()">进入</button>
+        <div id="loginError">密码错误</div>
+    </div>
+</div>
+
+<!-- 主应用 -->
+<div id="mainApp">
+    <!-- 备忘录页 -->
+    <div class="memo-page" id="memoPage">
+        <div class="header">
+            <input type="text" id="searchInput" placeholder="搜索历史记录..." oninput="searchMemo()">
+            <span class="menu-btn" onclick="clearSearch()">✕</span>
+        </div>
+        <div class="content" id="memoContent"></div>
+    </div>
+
+    <!-- 待办页 -->
+    <div class="todo-page" id="todoPage">
+        <div class="header" style="justify-content:center;">
+            <span style="color:white;font-size:18px;font-weight:bold;">待办清单</span>
+        </div>
+        <div class="content" id="todoContent"></div>
+        <button class="todo-add-btn" onclick="showTodoModal()">+</button>
+    </div>
+
+    <!-- 我的页 -->
+    <div class="profile-page" id="profilePage">
+        <div class="profile-card">
+            <h3>📁 数据管理</h3>
+            <button class="profile-btn btn-primary" onclick="exportToExcel()">📊 导出 Excel</button>
+            <button class="profile-btn btn-primary" onclick="exportBackup()">💾 备份数据</button>
+            <button class="profile-btn btn-secondary" onclick="importBackup()">📥 恢复数据</button>
+            <input type="file" id="importFile" style="display:none" accept=".json" onchange="handleImport(event)">
+        </div>
+        <div class="profile-card">
+            <h3>🖼️ 图片管理</h3>
+            <button class="profile-btn btn-primary" onclick="exportImages()">🗂️ 打包下载图片</button>
+        </div>
+        <div class="profile-card">
+            <h3>⚠️ 危险操作</h3>
+            <button class="profile-btn btn-danger" onclick="clearAllData()">🗑️ 清空所有数据</button>
+        </div>
+    </div>
+
+    <!-- 底部输入栏（仅备忘录显示） -->
+    <div class="input-bar" id="inputBar">
+        <input type="text" id="memoInput" placeholder="记点什么..." onkeypress="if(event.key===&#39;Enter&#39;)sendMemo()">
+        <button class="icon-btn" onclick="document.getElementById(&#39;imageInput&#39;).click()">🖼️</button>
+        <button class="icon-btn" onclick="document.getElementById(&#39;cameraInput&#39;).click()">📷</button>
+        <button class="icon-btn" onclick="document.getElementById(&#39;fileInput&#39;).click()">📎</button>
+        <button class="send-btn" onclick="sendMemo()">➤</button>
+    </div>
+
+    <!-- 隐藏的文件输入 -->
+    <input type="file" id="fileInput" onchange="handleFile(event)">
+    <input type="file" id="imageInput" accept="image/*" onchange="handleImage(event)">
+    <input type="file" id="cameraInput" accept="image/*" capture="camera" onchange="handleImage(event)">
+
+    <!-- 底部导航 -->
+    <div class="bottom-nav" id="bottomNav">
+        <div class="nav-item active" onclick="switchTab(&#39;memo&#39;)">
+            <span class="nav-icon">📝</span>备忘录
+        </div>
+        <div class="nav-item" onclick="switchTab(&#39;todo&#39;)">
+            <span class="nav-icon">✅</span>待办
+        </div>
+        <div class="nav-item" onclick="switchTab(&#39;profile&#39;)">
+            <span class="nav-icon">👤</span>我的
+        </div>
+    </div>
+</div>
+
+<!-- 图片预览 -->
+<div class="img-preview" id="imgPreview" onclick="closePreview()">
+    <img id="previewImg" src="">
+</div>
+
+<!-- 待办添加弹窗 -->
+<div class="modal" id="todoModal">
+    <div class="modal-content">
+        <h4>新建待办</h4>
+        <input type="text" id="todoInput" placeholder="要做什么..." onkeypress="if(event.key===&#39;Enter&#39;)addTodo()">
+        <div class="modal-btns">
+            <button class="btn-secondary" onclick="closeTodoModal()">取消</button>
+            <button class="btn-primary" onclick="addTodo()" style="background:#667eea;color:white;">确定</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ==================== 配置 ====================
+const CORRECT_PASSWORD = 'soya3360'; // 默认密码，可修改
+const DB_NAME = 'WorkMemoDB';
+const DB_VERSION = 1;
+
+// ==================== IndexedDB ====================
+let db = null;
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => { db = request.result; resolve(db); };
+        request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('memos')) {
+                db.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
+            }
+            if (!db.objectStoreNames.contains('todos')) {
+                db.createObjectStore('todos', { keyPath: 'id', autoIncrement: true });
+            }
+        };
+    });
+}
+
+function addMemo(data) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('memos', 'readwrite');
+        const store = tx.objectStore('memos');
+        const request = store.add(data);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+function getAllMemos() {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('memos', 'readonly');
+        const store = tx.objectStore('memos');
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result.reverse());
+        request.onerror = () => reject(request.error);
+    });
+}
+
+function deleteMemo(id) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('memos', 'readwrite');
+        const store = tx.objectStore('memos');
+        const request = store.delete(id);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+}
+
+function addTodo(data) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('todos', 'readwrite');
+        const store = tx.objectStore('todos');
+        const request = store.add(data);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+function getAllTodos() {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('todos', 'readonly');
+        const store = tx.objectStore('todos');
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+function updateTodo(id, data) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('todos', 'readwrite');
+        const store = tx.objectStore('todos');
+        const request = store.put({ ...data, id });
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+}
+
+function deleteTodo(id) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('todos', 'readwrite');
+        const store = tx.objectStore('todos');
+        const request = store.delete(id);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+}
+
+function clearAllData() {
+    return new Promise((resolve, reject) => {
+        const tx1 = db.transaction('memos', 'readwrite');
+        tx1.objectStore('memos').clear();
+        const tx2 = db.transaction('todos', 'readwrite');
+        tx2.objectStore('todos').clear();
+        tx2.oncomplete = () => resolve();
+        tx2.onerror = () => reject(tx2.error);
+    });
+}
+
+// ==================== 登录 ====================
+function doLogin() {
+    const pwd = document.getElementById('passwordInput').value;
+    if (pwd === CORRECT_PASSWORD) {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'flex';
+        initApp();
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+        document.getElementById('passwordInput').value = '';
+    }
+}
+
+// ==================== 初始化 ====================
+async function initApp() {
+    await openDB();
+    renderMemos();
+    renderTodos();
+}
+
+// ==================== 页面切换 ====================
+let currentTab = 'memo';
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+
+    document.getElementById('memoPage').style.display = tab === 'memo' ? 'block' : 'none';
+    document.getElementById('todoPage').style.display = tab === 'todo' ? 'block' : 'none';
+    document.getElementById('profilePage').style.display = tab === 'profile' ? 'block' : 'none';
+    document.getElementById('inputBar').style.display = tab === 'memo' ? 'flex' : 'none';
+
+    if (tab === 'memo') renderMemos();
+    if (tab === 'todo') renderTodos();
+}
+
+// ==================== 备忘录 ====================
+async function sendMemo() {
+    const input = document.getElementById('memoInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    await addMemo({
+        text: text,
+        images: [],
+        files: [],
+        time: new Date().toISOString()
+    });
+    input.value = '';
+    renderMemos();
+}
+
+async function handleImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        await addMemo({
+            text: '',
+            images: [e.target.result],
+            files: [],
+            time: new Date().toISOString()
+        });
+        renderMemos();
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+}
+
+async function handleFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        await addMemo({
+            text: `📎 ${file.name}`,
+            images: [],
+            files: [{ name: file.name, data: e.target.result, type: file.type }],
+            time: new Date().toISOString()
+        });
+        renderMemos();
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+}
+
+function formatTime(iso) {
+    const d = new Date(iso);
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    const hours = d.getHours().toString().padStart(2, '0');
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+
+    if (isToday) {
+        return `今天 ${hours}:${minutes}`;
+    } else {
+        const month = (d.getMonth() + 1).toString().padStart(2, '0');
+        const day = d.getDate().toString().padStart(2, '0');
+        return `${month}月${day}日 ${hours}:${minutes}`;
+    }
+}
+
+function formatDate(iso) {
+    const d = new Date(iso);
+    const now = new Date();
+    if (d.toDateString() === now.toDateString()) return '今天';
+    const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) return '昨天';
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    return `${month}月${day}日`;
+}
+
+async function renderMemos(searchTerm = '') {
+    const container = document.getElementById('memoContent');
+    let memos = await getAllMemos();
+
+    if (searchTerm) {
+        memos = memos.filter(m => m.text && m.text.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+
+    if (memos.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">📝</div>
+                <div>还没有记录</div>
+                <div style="font-size:13px;margin-top:8px;">在底部输入框开始记录吧</div>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    let lastDate = '';
+
+    memos.forEach(memo => {
+        const date = formatDate(memo.time);
+        if (date !== lastDate) {
+            html += `<div class="msg-date">${date}</div>`;
+            lastDate = date;
+        }
+
+        let imagesHtml = '';
+        if (memo.images && memo.images.length > 0) {
+            imagesHtml = '<div class="msg-images">' + 
+                memo.images.map(img => `<img src="${img}" onclick="previewImage('${img}')">`).join('') + 
+                '</div>';
+        }
+
+        let filesHtml = '';
+        if (memo.files && memo.files.length > 0) {
+            filesHtml = '<div class="msg-files">' + 
+                memo.files.map(f => `<span class="file-tag" onclick="downloadFile('${f.name}', '${f.data}')">📄 ${f.name}</span>`).join('') + 
+                '</div>';
+        }
+
+        html += `
+            <div class="msg-bubble" data-id="${memo.id}">
+                <span class="msg-delete" onclick="deleteMemoItem(${memo.id})">🗑️</span>
+                <div class="msg-time">${formatTime(memo.time)}</div>
+                ${memo.text ? `<div class="msg-text">${escapeHtml(memo.text)}</div>` : ''}
+                ${imagesHtml}
+                ${filesHtml}
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+async function deleteMemoItem(id) {
+    if (!confirm('确定删除这条记录？')) return;
+    await deleteMemo(id);
+    renderMemos();
+}
+
+function searchMemo() {
+    const term = document.getElementById('searchInput').value;
+    renderMemos(term);
+}
+
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    renderMemos();
+}
+
+function previewImage(src) {
+    document.getElementById('previewImg').src = src;
+    document.getElementById('imgPreview').style.display = 'flex';
+}
+
+function closePreview() {
+    document.getElementById('imgPreview').style.display = 'none';
+}
+
+function downloadFile(name, data) {
+    const a = document.createElement('a');
+    a.href = data;
+    a.download = name;
+    a.click();
+}
+
+// ==================== 待办 ====================
+async function renderTodos() {
+    const container = document.getElementById('todoContent');
+    const todos = await getAllTodos();
+
+    if (todos.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">✅</div>
+                <div>没有待办事项</div>
+                <div style="font-size:13px;margin-top:8px;">点击右下角 + 添加</div>
+            </div>
+        `;
+        return;
+    }
+
+    // 未完成的在前，已完成的在后
+    todos.sort((a, b) => {
+        if (a.done === b.done) return new Date(b.time) - new Date(a.time);
+        return a.done ? 1 : -1;
+    });
+
+    let html = '';
+    todos.forEach(todo => {
+        html += `
+            <div class="todo-item">
+                <div class="todo-checkbox ${todo.done ? 'checked' : ''}" onclick="toggleTodo(${todo.id}, ${todo.done})"></div>
+                <div class="todo-text ${todo.done ? 'done' : ''}">${escapeHtml(todo.text)}</div>
+                <span class="todo-delete" onclick="deleteTodoItem(${todo.id})">🗑️</span>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+async function toggleTodo(id, currentDone) {
+    const todos = await getAllTodos();
+    const todo = todos.find(t => t.id === id);
+    if (todo) {
+        todo.done = !currentDone;
+        await updateTodo(id, todo);
+        renderTodos();
+    }
+}
+
+async function deleteTodoItem(id) {
+    if (!confirm('确定删除这条待办？')) return;
+    await deleteTodo(id);
+    renderTodos();
+}
+
+function showTodoModal() {
+    document.getElementById('todoModal').style.display = 'flex';
+    document.getElementById('todoInput').focus();
+}
+
+function closeTodoModal() {
+    document.getElementById('todoModal').style.display = 'none';
+    document.getElementById('todoInput').value = '';
+}
+
+async function addTodo() {
+    const input = document.getElementById('todoInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    await addTodo({
+        text: text,
+        done: false,
+        time: new Date().toISOString()
+    });
+    closeTodoModal();
+    renderTodos();
+}
+
+// ==================== 导出功能 ====================
+async function exportToExcel() {
+    const memos = await getAllMemos();
+    if (memos.length === 0) { alert('没有数据可导出'); return; }
+
+    const data = memos.map(m => ({
+        '时间': new Date(m.time).toLocaleString('zh-CN'),
+        '内容': m.text || '',
+        '图片数量': m.images ? m.images.length : 0,
+        '附件': m.files ? m.files.map(f => f.name).join(', ') : ''
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '备忘录');
+    XLSX.writeFile(wb, `备忘录_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+async function exportBackup() {
+    const memos = await getAllMemos();
+    const todos = await getAllTodos();
+    const backup = { memos, todos, exportTime: new Date().toISOString() };
+
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `备忘录备份_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function importBackup() {
+    document.getElementById('importFile').click();
+}
+
+async function handleImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const backup = JSON.parse(e.target.result);
+            if (confirm(`确定恢复备份？这将覆盖现有数据！
+备份时间：${backup.exportTime || '未知'}`)) {
+                await clearAllData();
+
+                if (backup.memos) {
+                    for (const m of backup.memos.reverse()) {
+                        delete m.id; // 让数据库重新分配ID
+                        await addMemo(m);
+                    }
+                }
+                if (backup.todos) {
+                    for (const t of backup.todos) {
+                        delete t.id;
+                        await addTodo(t);
+                    }
+                }
+
+                alert('恢复成功！');
+                renderMemos();
+                renderTodos();
+            }
+        } catch (err) {
+            alert('备份文件格式错误！');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+async function exportImages() {
+    const memos = await getAllMemos();
+    const allImages = [];
+    memos.forEach(m => {
+        if (m.images) allImages.push(...m.images);
+    });
+
+    if (allImages.length === 0) { alert('没有图片可导出'); return; }
+
+    const zip = new JSZip();
+    allImages.forEach((img, i) => {
+        const base64 = img.split(',')[1];
+        zip.file(`图片_${i + 1}.jpg`, base64, { base64: true });
+    });
+
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, `图片备份_${new Date().toISOString().slice(0,10)}.zip`);
+}
+
+async function clearAllData() {
+    if (!confirm('⚠️ 确定清空所有数据？此操作不可恢复！')) return;
+    if (!confirm('再次确认：真的要删除所有备忘录和待办吗？')) return;
+    await clearAllData();
+    renderMemos();
+    renderTodos();
+    alert('已清空所有数据');
+}
+
+// ==================== 启动 ====================
+// 检查是否已登录（简单session）
+if (sessionStorage.getItem('memoLoggedIn') === 'true') {
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'flex';
+    initApp();
+}
+</script>
+
+</body></html>
