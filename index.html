@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0062)blob:https://www.kimi.com/288161e3-f5b1-4840-b75a-31b32337f04e -->
+<!-- saved from url=(0062)blob:https://www.kimi.com/b22bfaa5-955a-407f-b44f-b178a947e8de -->
 <html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -734,7 +734,9 @@ async function exportBackup() {
 }
 
 function importBackup() {
-    document.getElementById('importFile').click();
+    const input = document.getElementById('importFile');
+    input.value = '';
+    input.click();
 }
 
 async function handleImport(event) {
