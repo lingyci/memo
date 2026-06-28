@@ -248,10 +248,15 @@ body {
             <h3>📁 数据管理</h3>
             <button class="profile-btn btn-primary" onclick="exportToExcel()">📊 导出 Excel</button>
             <button class="profile-btn btn-primary" onclick="exportBackup()">💾 备份数据</button>
-            <button class="profile-btn btn-secondary" onclick="importBackup()">📥 恢复数据（覆盖）</button>
-            <button class="profile-btn btn-secondary" onclick="importMerge()">📥 导入数据（合并）</button>
-            <input type="file" id="importFile" style="display:none" accept=".json" onchange="handleImport(event)">
-            <input type="file" id="mergeFile" style="display:none" accept=".json" onchange="handleMerge(event)">
+            <label class="profile-btn btn-secondary" style="display:block;cursor:pointer;">
+                📥 恢复数据（覆盖）
+                <input type="file" id="importFile" style="display:none" accept=".json" onchange="handleImport(event)">
+            </label>
+            <label class="profile-btn btn-secondary" style="display:block;cursor:pointer;">
+                📥 导入数据（合并）
+                <input type="file" id="mergeFile" style="display:none" accept=".json" onchange="handleMerge(event)">
+            </label>
+            
         </div>
         <div class="profile-card">
             <h3>🖼️ 图片管理</h3>
@@ -303,7 +308,7 @@ body {
         <input type="text" id="todoInput" placeholder="要做什么..." onkeypress="if(event.key==='Enter')addTodo()">
         <div class="modal-btns">
             <button class="btn-secondary" onclick="closeTodoModal()">取消</button>
-            <button class="btn-primary" onclick="addTodo()" style="background:#667eea;color:white;">确定</button>
+            <button class="btn-primary" onclick="addNewTodo()" style="background:#667eea;color:white;">确定</button>
         </div>
     </div>
 </div>
@@ -687,7 +692,7 @@ function closeTodoModal() {
     document.getElementById('todoInput').value = '';
 }
 
-async function addTodo() {
+async function addNewTodo() {
     const input = document.getElementById('todoInput');
     const text = input.value.trim();
     if (!text) return;
@@ -733,17 +738,11 @@ async function exportBackup() {
     URL.revokeObjectURL(url);
 }
 
-function importMerge() {
-    const input = document.getElementById('mergeFile');
-    input.value = '';
-    input.click();
-}
 
-function importBackup() {
-    const input = document.getElementById('importFile');
-    input.value = '';
-    input.click();
-}
+
+
+
+
 
 async function handleImport(event) {
     const file = event.target.files[0];
