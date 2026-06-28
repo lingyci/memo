@@ -50,6 +50,28 @@ body {
     background: #667eea; padding: 10px 15px; padding-top: env(safe-area-inset-top, 10px);
     display: flex; align-items: center; gap: 10px; flex-shrink: 0;
 }
+.filter-bar {
+    background: #667eea; padding: 5px 15px 8px 15px;
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.filter-bar input[type="date"] {
+    padding: 6px 10px; border: none; border-radius: 8px;
+    font-size: 13px; outline: none; background: rgba(255,255,255,0.9);
+    flex: 1;
+}
+.type-filter {
+    background: #667eea; padding: 0 15px 10px 15px;
+    display: flex; gap: 8px; flex-shrink: 0;
+}
+.type-btn {
+    padding: 6px 14px; border-radius: 15px; font-size: 13px;
+    background: rgba(255,255,255,0.2); color: white;
+    cursor: pointer; transition: all 0.2s; flex: 1;
+    text-align: center;
+}
+.type-btn.active {
+    background: white; color: #667eea;
+}
 .header input {
     flex: 1; padding: 10px 15px; border: none; border-radius: 20px;
     font-size: 14px; outline: none; background: rgba(255,255,255,0.9);
@@ -442,6 +464,15 @@ async function initApp() {
 
 // ==================== 页面切换 ====================
 let currentTab = 'memo';
+let currentTypeFilter = 'all';
+
+function setTypeFilter(type) {
+    currentTypeFilter = type;
+    document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    searchMemo();
+}
+
 function switchTab(tab) {
     currentTab = tab;
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -611,6 +642,12 @@ function searchMemo() {
 
 function clearSearch() {
     document.getElementById('searchInput').value = '';
+    document.getElementById('startDate').value = '';
+    document.getElementById('endDate').value = '';
+    currentTypeFilter = 'all';
+    document.querySelectorAll('.type-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === 0);
+    });
     renderMemos();
 }
 
